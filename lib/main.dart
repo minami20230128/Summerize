@@ -10,7 +10,7 @@ class ApiService {
   // 書籍を追加
   static Future<int?> addBook(Book book) async {
     final response = await http.post(
-      Uri.parse(baseUrl),
+      Uri.parse("$baseUrl/books"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"title": book.title}),
     );
@@ -30,7 +30,8 @@ class ApiService {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "chapterTitle": chapter.chapterTitle,
-        "content": chapter.content
+        "content": chapter.content,
+        "bookId": chapter.book_id
       }),
     );
 
@@ -46,8 +47,8 @@ class ApiService {
 class Bookshelf {
 	List<Book> books = [];
 
-	void addBook(String title) {
-		books.add(Book(title: title));
+	void addBook(Book book) {
+		books.add(book);
 	}
 }
 
@@ -58,8 +59,8 @@ class Book {
 
 	Book({required this.title});
 
-	void addChapter(String chapterTitle, String content) {
-	  chapters.add(Chapter(chapterTitle: chapterTitle, content: content));
+	void addChapter(Chapter chapter) {
+	  chapters.add(chapter);
 	}
 }
 
@@ -67,10 +68,10 @@ class Chapter {
   int? id;
 	String chapterTitle;
 	String content;
+  int book_id;
 
-	Chapter({required this.chapterTitle, required this.content});
+	Chapter({required this.chapterTitle, required this.content, required this.book_id});
 }
-
 
 void main() async {
     runApp(MyApp());
@@ -100,7 +101,7 @@ class _BookSummaryAppState extends State<BookSummaryApp> {
     // APIを呼んでデータベースに登録
     newBook.id = await ApiService.addBook(newBook);
     setState(() {
-      _bookshelf.addBook(title);
+      _bookshelf.addBook(newBook);
     });
 	}
 
@@ -187,12 +188,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 	final TextEditingController _chapterContentController = TextEditingController();
 
 	void _addChapter(String title, String content) async {
-    final newChapter = Chapter(chapterTitle: title, content: content);
+    final newChapter = Chapter(chapterTitle: title, content: content, book_id: widget.book.id!);
 
     // APIを呼んでデータベースに登録
     newChapter.id = await ApiService.addChapter(newChapter);
 		setState(() {
-    widget.book.addChapter(title, content);
+    widget.book.addChapter(newChapter);
 		});
 		_chapterTitleController.clear();
 		_chapterContentController.clear();
