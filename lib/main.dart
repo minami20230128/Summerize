@@ -18,6 +18,7 @@ class ApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       print("Book added successfully");
       final data = jsonDecode(response.body);
+      print(data["id"]);
       return data["id"];  // 返された書籍のIDを取得
       } 
     return null;
@@ -25,6 +26,7 @@ class ApiService {
 
   // 章を追加
   static Future<int?> addChapter(Chapter chapter) async {
+    print(chapter.book_id);
     final response = await http.post(
       Uri.parse("$baseUrl/chapters"),
       headers: {"Content-Type": "application/json"},
@@ -100,6 +102,7 @@ class _BookSummaryAppState extends State<BookSummaryApp> {
 
     // APIを呼んでデータベースに登録
     newBook.id = await ApiService.addBook(newBook);
+    print(newBook.id);
     setState(() {
       _bookshelf.addBook(newBook);
     });
@@ -155,6 +158,7 @@ class _BookSummaryAppState extends State<BookSummaryApp> {
 			child: ListTile(
 				title: Text(book.title),
 				onTap: () {
+          print("Navigating to BookDetailScreen with book ID: ${book.id}");
 				Navigator.push(
 					context,
 					MaterialPageRoute(
@@ -188,6 +192,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 	final TextEditingController _chapterContentController = TextEditingController();
 
 	void _addChapter(String title, String content) async {
+    print("Adding chapter to book ID: ${widget.book.id}");
     final newChapter = Chapter(chapterTitle: title, content: content, book_id: widget.book.id!);
 
     // APIを呼んでデータベースに登録
