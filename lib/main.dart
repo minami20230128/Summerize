@@ -5,87 +5,128 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:8080/api";
+    static const String baseUrl = "http://localhost:8080/api";
 
-  // 書籍を追加
-  static Future<int?> addBook(Book book) async {
-    final response = await http.post(
-      Uri.parse("$baseUrl/books"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"title": book.title}),
-    );
+    // 書籍を追加
+    static Future<int?> addBook(Book book) async {
+        final response = await http.post(
+            Uri.parse("$baseUrl/books"),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({"title": book.title}),
+        );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      print("Book added successfully");
-      final data = jsonDecode(response.body);
-      print(data["id"]);
-      return data["id"];  // 返された書籍のIDを取得
-      } 
-    return null;
-  }
-
-  // 章を追加
-  static Future<int?> addChapter(Chapter chapter) async {
-    print(chapter.book_id);
-    final response = await http.post(
-      Uri.parse("$baseUrl/chapters"),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "chapterTitle": chapter.chapterTitle,
-        "content": chapter.content,
-        "bookId": chapter.book_id
-      }),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      return data["id"]; // 保存された chapterId を返す
+        if (response.statusCode == 200 || response.statusCode == 201) {
+            print("Book added successfully");
+            final data = jsonDecode(response.body);
+            print(data["id"]);
+            return data["id"];  // 返された書籍のIDを取得
+            } 
+        return null;
     }
-    return null;
-  }
+
+    // 章を追加
+    static Future<int?> addChapter(Chapter chapter) async {
+        print(chapter.bookId);
+        final response = await http.post(
+            Uri.parse("$baseUrl/chapters"),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+                "chapterTitle": chapter.chapterTitle,
+                "content": chapter.content,
+                "bookId": chapter.bookId
+            }),
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+            final data = jsonDecode(response.body);
+            return data["id"]; // 保存された chapterId を返す
+        }
+        return null;
+    }
+
+    static Future<List<Book>> fetchBooksWithChapters() async {
+        final response = await http.get(Uri.parse("$baseUrl/books/details"));
+
+        if (response.statusCode == 200) {
+            List<dynamic> data = jsonDecode(response.body);
+            return data.map((json) => Book.fromJson(json)).toList();
+        } else {
+            throw Exception("Failed to load books");
+        }
+    }
 }
 
+    class Bookshelf {
+    List<Book> books = [];
 
-class Bookshelf {
-	List<Book> books = [];
-
-	void addBook(Book book) {
-		books.add(book);
-	}
-}
+    void addBook(Book book) {
+    books.add(book);
+    }
+    }
 
 class Book {
-  int? id;
+    int? id;
 	String title;
 	List<Chapter> chapters = [];
 
 	Book({required this.title});
+    Book.load({
+        required this.id,
+        required this.title,
+        required this.chapters
+    });
 
 	void addChapter(Chapter chapter) {
-	  chapters.add(chapter);
+        chapters.add(chapter);
 	}
+
+    factory Book.fromJson(Map<String, dynamic> json) {
+    return Book.load(
+        id: json["id"],
+        title: json["title"],
+        chapters: (json["chapters"] as List<dynamic>)
+            .map((chapterJson) => Chapter.fromJson(chapterJson))
+            .toList(),
+        );
+    }
 }
 
 class Chapter {
-  int? id;
+    int? id;
 	String chapterTitle;
 	String content;
-  int book_id;
+    int bookId;
 
-	Chapter({required this.chapterTitle, required this.content, required this.book_id});
+	Chapter({required this.chapterTitle, required this.content, required this.bookId});
+
+    Chapter.load({
+        required this.id,
+        required this.chapterTitle,
+        required this.content,
+        required this.bookId,
+    });
+
+    factory Chapter.fromJson(Map<String, dynamic> json) {
+    return Chapter.load(
+        id: json["id"],
+        chapterTitle: json["chapterTitle"],
+        content: json["content"],
+        bookId: json["bookId"],
+        );
+    }
 }
 
 void main() async {
     runApp(MyApp());
-  }
+    }
 
-  class MyApp extends StatelessWidget {
+    class MyApp extends StatelessWidget {
     @override
     Widget build(BuildContext context) {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: BookSummaryApp(),
-      );
+        );
     }
 }
 
@@ -97,15 +138,28 @@ class BookSummaryApp extends StatefulWidget {
 class _BookSummaryAppState extends State<BookSummaryApp> {
 	final Bookshelf _bookshelf = Bookshelf();
 
-	void _addBook(String title) async {
-    final newBook = Book(title: title);
+    @override
+    void initState() {
+        super.initState();
+        _fetchBooks(); // アプリ起動時にDBからデータを取得
+    }
 
-    // APIを呼んでデータベースに登録
-    newBook.id = await ApiService.addBook(newBook);
-    print(newBook.id);
-    setState(() {
-      _bookshelf.addBook(newBook);
-    });
+    void _fetchBooks() async {
+        List<Book> books = await ApiService.fetchBooksWithChapters();
+        setState(() {
+            _bookshelf.books = books; // 取得した書籍を_bookshelfにセット
+        });
+        }
+
+	void _addBook(String title) async {
+        final newBook = Book(title: title);
+
+        // APIを呼んでデータベースに登録
+        newBook.id = await ApiService.addBook(newBook);
+        print(newBook.id);
+        setState(() {
+        _bookshelf.addBook(newBook);
+        });
 	}
 
 	void _showAddBookDialog() {
@@ -158,7 +212,7 @@ class _BookSummaryAppState extends State<BookSummaryApp> {
 			child: ListTile(
 				title: Text(book.title),
 				onTap: () {
-          print("Navigating to BookDetailScreen with book ID: ${book.id}");
+        print("Navigating to BookDetailScreen with book ID: ${book.id}");
 				Navigator.push(
 					context,
 					MaterialPageRoute(
@@ -193,7 +247,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
 	void _addChapter(String title, String content) async {
     print("Adding chapter to book ID: ${widget.book.id}");
-    final newChapter = Chapter(chapterTitle: title, content: content, book_id: widget.book.id!);
+    final newChapter = Chapter(chapterTitle: title, content: content, bookId: widget.book.id!);
 
     // APIを呼んでデータベースに登録
     newChapter.id = await ApiService.addChapter(newChapter);
