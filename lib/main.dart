@@ -26,7 +26,7 @@ class ApiService {
 
     // 章を追加
     static Future<int?> addChapter(Chapter chapter) async {
-        print(chapter.bookId);
+        print(chapter.chapterTitle);
         final response = await http.post(
             Uri.parse("$baseUrl/chapters"),
             headers: {"Content-Type": "application/json"},
@@ -49,6 +49,7 @@ class ApiService {
 
         if (response.statusCode == 200) {
             List<dynamic> data = jsonDecode(response.body);
+            print('Response body: ${response.body}');
             return data.map((json) => Book.fromJson(json)).toList();
         } else {
             throw Exception("Failed to load books");
@@ -109,7 +110,7 @@ class Chapter {
     factory Chapter.fromJson(Map<String, dynamic> json) {
     return Chapter.load(
         id: json["id"],
-        chapterTitle: json["chapterTitle"],
+        chapterTitle: json["title"],
         content: json["content"],
         bookId: json["bookId"],
         );
@@ -233,9 +234,9 @@ class _BookSummaryAppState extends State<BookSummaryApp> {
 }
 
 class BookDetailScreen extends StatefulWidget {
-	final Book book;
+	Book book;
 
-	const BookDetailScreen({Key? key, required this.book}) : super(key: key);
+	BookDetailScreen({Key? key, required this.book}) : super(key: key);
 
 	@override
 	_BookDetailScreenState createState() => _BookDetailScreenState();
@@ -245,17 +246,35 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 	final TextEditingController _chapterTitleController = TextEditingController();
 	final TextEditingController _chapterContentController = TextEditingController();
 
-	void _addChapter(String title, String content) async {
-    print("Adding chapter to book ID: ${widget.book.id}");
-    final newChapter = Chapter(chapterTitle: title, content: content, bookId: widget.book.id!);
+    @override
+    void initState() {
+        super.initState();
+        _fetchChapters(); // 画面表示時に最新の章を取得
+    }
 
-    // APIを呼んでデータベースに登録
-    newChapter.id = await ApiService.addChapter(newChapter);
-		setState(() {
-    widget.book.addChapter(newChapter);
-		});
-		_chapterTitleController.clear();
-		_chapterContentController.clear();
+    void _fetchChapters() async {
+        // 最新の書籍データを取得
+        List<Book> books = await ApiService.fetchBooksWithChapters();
+        print("book.chapter.title ${books[0].chapters[0].chapterTitle}");
+        print("widget.book.id ${widget.book.id}");
+        Book? updatedBook = books.firstWhere((b) => b.id == widget.book.id, orElse: () => widget.book);
+
+        setState(() {
+        widget.book = updatedBook;
+        });
+    }
+
+	void _addChapter(String title, String content) async {
+        print("Adding chapter to book ID: ${widget.book.id}");
+        final newChapter = Chapter(chapterTitle: title, content: content, bookId: widget.book.id!);
+
+        // APIを呼んでデータベースに登録
+        newChapter.id = await ApiService.addChapter(newChapter);
+            setState(() {
+        widget.book.addChapter(newChapter);
+            });
+            _chapterTitleController.clear();
+            _chapterContentController.clear();
 	}
 
 	void _showAddChapterDialog() {
@@ -305,36 +324,38 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
 	@override
 	Widget build(BuildContext context) {
-	return Scaffold(
-		appBar: AppBar(
-		title: Text("書籍の詳細: ${widget.book.title}"),
-		),
-		body: Column(
-		children: [
-			Expanded(
-			child: ListView.builder(
-				itemCount: widget.book.chapters.length,
-				itemBuilder: (context, index) {
-				final chapter = widget.book.chapters[index];
-				return Card(
-					margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-					child: ListTile(
-					title: Text(chapter.chapterTitle),
-					subtitle: Text(chapter.content),
-					),
-				);
-				},
-			),
-			),
-			Padding(
-			padding: const EdgeInsets.all(16.0),
-			child: ElevatedButton(
-				onPressed: _showAddChapterDialog,
-				child: Text("章を追加"),
-			),
-			),
-		],
-		),
-	);
+        print(widget.book.chapters[0].chapterTitle);
+
+        return Scaffold(
+            appBar: AppBar(
+            title: Text("書籍の詳細: ${widget.book.title}"),
+            ),
+            body: Column(
+            children: [
+                Expanded(
+                child: ListView.builder(
+                    itemCount: widget.book.chapters.length,
+                    itemBuilder: (context, index) {
+                    final chapter = widget.book.chapters[index];
+                    return Card(
+                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        child: ListTile(
+                        title: Text(chapter.chapterTitle),
+                        subtitle: Text(chapter.content),
+                        ),
+                    );
+                    },
+                ),
+                ),
+                Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ElevatedButton(
+                    onPressed: _showAddChapterDialog,
+                    child: Text("章を追加"),
+                ),
+                ),
+            ],
+            ),
+        );
 	}
 }
