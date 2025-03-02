@@ -1,240 +1,178 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
-class CharacterGraphScreen extends StatelessWidget {
-	@override
-	Widget build(BuildContext context) {
-		return Scaffold(
-			appBar: AppBar(
-				title: Text("人物相関図"),
-			),
-			body: PersonGraph(),
-		);
-	}
+void main() {
+  runApp(MyApp());
 }
 
-class PersonNode {
-	String name;
-	Offset position;
-
-	PersonNode({required this.name, required this.position});
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: CharacterGraphScreen(),
+    );
+  }
 }
 
-class Relationship {
-	final PersonNode from;
-	final PersonNode to;
-	String relation;
-
-	Relationship({required this.from, required this.to, required this.relation});
+class CharacterGraphScreen extends StatefulWidget {
+  @override
+  _CharacterGraphScreenState createState() => _CharacterGraphScreenState();
 }
 
-class GraphPainter extends CustomPainter {
-	final List<PersonNode> nodes;
-	final List<Relationship> relationships;
+class _CharacterGraphScreenState extends State<CharacterGraphScreen> {
+  // 丸のリスト
+  List<CircleData> circles = [];
 
-	GraphPainter({required this.nodes, required this.relationships});
+  // 丸同士が重ならないか確認する関数
+  bool _isPositionAvailable(double left, double top) {
+    for (var circle in circles) {
+      double distance = sqrt(pow(circle.left - left, 2) + pow(circle.top - top, 2));
+      if (distance < 100) { // 丸の半径100で重ならないようにチェック
+        return false;
+      }
+    }
+    return true;
+  }
 
-	@override
-	void paint(Canvas canvas, Size size) {
-		final paint = Paint()
-			..color = Colors.black
-			..strokeWidth = 2;
+  // 新しい丸を作成する関数
+  void _addCircle() {
+    double newLeft = 100.0;
+    double newTop = 100.0;
+    
+    // 重ならない位置を探す
+    bool positionFound = false;
+    Random random = Random();
 
-		for (var relationship in relationships) {
-			canvas.drawLine(relationship.from.position, relationship.to.position, paint);
-		}
-	}
+    while (!positionFound) {
+      newLeft = random.nextDouble() * (MediaQuery.of(context).size.width - 100); // 幅の範囲内でランダムに位置を決定
+      newTop = random.nextDouble() * (MediaQuery.of(context).size.height - 100); // 高さの範囲内でランダムに位置を決定
 
-	@override
-	bool shouldRepaint(covariant CustomPainter oldDelegate) {
-		return true;
-	}
+      // 重ならない位置が見つかるまでループ
+      positionFound = _isPositionAvailable(newLeft, newTop);
+    }
+
+    setState(() {
+      circles.add(CircleData(
+        left: newLeft,
+        top: newTop,
+        text: '', // 初期状態では空のテキスト
+      ));
+    });
+  }
+
+  // ダイアログを表示する関数
+  void _showTextDialog(BuildContext context, CircleData circle) {
+    TextEditingController controller = TextEditingController();
+    controller.text = circle.text;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('テキストを入力してください'),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(hintText: '入力してください'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  circle.text = controller.text; // テキストを更新
+                });
+                Navigator.of(context).pop(); // ダイアログを閉じる
+              },
+              child: Text('OK'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // ダイアログを閉じる
+              },
+              child: Text('キャンセル'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("ドラッグ可能な丸い図形"),
+      ),
+      body: Stack(
+        children: [
+          // 丸のリストを表示
+          ...circles.map((circle) {
+            return Positioned(
+              top: circle.top,
+              left: circle.left,
+              child: GestureDetector(
+                // 丸をドラッグする
+                onPanStart: (details) {
+                  circle.offsetX = details.localPosition.dx - circle.left;
+                  circle.offsetY = details.localPosition.dy - circle.top;
+                },
+                onPanUpdate: (details) {
+                  setState(() {
+                    circle.top = details.localPosition.dy - circle.offsetY;
+                    circle.left = details.localPosition.dx - circle.offsetX;
+                  });
+                },
+                onTap: () {
+                  _showTextDialog(context, circle); // 丸をクリックしてテキストダイアログを表示
+                },
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue,
+                  ),
+                  child: Center(
+                    child: Text(
+                      circle.text,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+          // 右下の「+」ボタン
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _addCircle,
+              child: Icon(Icons.add),
+              backgroundColor: Colors.blue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class NodeWidget extends StatelessWidget {
-	final PersonNode node;
+// 丸のデータを保持するクラス
+class CircleData {
+  double left;
+  double top;
+  String text;
+  double offsetX = 0;
+  double offsetY = 0;
 
-	NodeWidget({required this.node});
-
-	@override
-	Widget build(BuildContext context) {
-		return GestureDetector(
-			onTap: () {
-			// Nodeがタップされたときの動作
-			},
-			child: Container(
-				padding: EdgeInsets.all(10),
-				decoration: BoxDecoration(
-					shape: BoxShape.circle,
-					color: Colors.blue,
-				),
-				child: Text(node.name, style: TextStyle(color: Colors.white)),
-			),
-		);
-	}
-}
-
-class PersonGraph extends StatefulWidget {
-	@override
-	_PersonGraphState createState() => _PersonGraphState();
-}
-
-class _PersonGraphState extends State<PersonGraph> {
-	List<PersonNode> nodes = [];
-	List<Relationship> relationships = [];
-	PersonNode? selectedNode;
-	Relationship? selectedRelationship;
-
-	@override
-	Widget build(BuildContext context) {
-		return GestureDetector(
-			onPanUpdate: (details) {
-				if (selectedNode != null) {
-					setState(() {
-						selectedNode!.position += details.localPosition;
-					});
-				}
-			},
-			onTap: () {
-				setState(() {
-					selectedNode = null;
-					selectedRelationship = null;
-				});
-			},
-			child: CustomPaint(
-				size: Size(double.infinity, double.infinity),
-				painter: GraphPainter(nodes: nodes, relationships: relationships),
-				child: Stack(
-					children: [
-						...nodes.map((node) => Positioned(
-							left: node.position.dx,
-							top: node.position.dy,
-							child: GestureDetector(
-								onPanUpdate: (details) {
-									setState(() {
-										node.position += details.localPosition;
-									});
-								},
-								child: NodeWidget(node: node),
-							),
-						)),
-						if (selectedNode != null) _buildNameInputDialog(),
-						if (selectedRelationship != null) _buildRelationshipInputDialog(),
-						_buildAddPersonButton(),  // 「+」ボタンを追加
-					],
-				),
-			),
-		);
-	}
-
-	Widget _buildAddPersonButton() {
-	return Positioned(
-		right: 16,
-		bottom: 16,
-		child: FloatingActionButton(
-		onPressed: _addPerson,
-		child: Icon(Icons.add),
-		),
-	);
-	}
-
-	void _addPerson() async {
-	// 新しい人物の名前を入力してもらうダイアログを表示
-	final newName = await _showDialog('人物の追加', '');
-	if (newName != null && newName.isNotEmpty) {
-		setState(() {
-			final newNode = PersonNode(
-				name: newName,
-				position: Offset(100.0, 100.0), // 初期位置を設定（適切な位置に調整可能）
-			);
-			nodes.add(newNode);
-
-			for(PersonNode node in nodes)
-			{
-				print(node.name);
-			}
-		});
-	}
-	}
-
-	Widget _buildNameInputDialog() {
-		return Positioned(
-			left: selectedNode!.position.dx + 20,
-			top: selectedNode!.position.dy - 40,
-			child: Material(
-				color: Colors.transparent,
-				child: InkWell(
-					onTap: () async {
-						final newName = await _showDialog(
-							'名前の変更',
-							selectedNode!.name,
-						);
-						if (newName != null && newName.isNotEmpty) {
-							setState(() {
-								selectedNode!.name = newName;
-							});
-						}
-					},
-					child: Container(
-					padding: EdgeInsets.all(8.0),
-					color: Colors.blue.withOpacity(0.5),
-					child: Text(selectedNode!.name),
-					),
-				),
-			),
-		);
-	}
-
-	Widget _buildRelationshipInputDialog() {
-		return Positioned(
-			left: (selectedRelationship!.from.position.dx + selectedRelationship!.to.position.dx) / 2,
-			top: (selectedRelationship!.from.position.dy + selectedRelationship!.to.position.dy) / 2,
-			child: Material(
-				color: Colors.transparent,
-				child: InkWell(
-					onTap: () async {
-						final newRelation = await _showDialog(
-							'関係の変更',
-							selectedRelationship!.relation,
-						);
-						if (newRelation != null && newRelation.isNotEmpty) {
-							setState(() {
-								selectedRelationship!.relation = newRelation;
-							});
-						}
-					},
-					child: Container(
-						padding: EdgeInsets.all(8.0),
-						color: Colors.green.withOpacity(0.5),
-						child: Text(selectedRelationship!.relation),
-					),
-				),
-			),
-		);
-	}
-
-	Future<String?> _showDialog(String title, String initialValue) async {
-		String inputValue = initialValue;
-		return showDialog<String>(
-			context: context,
-			builder: (context) {
-				return AlertDialog(
-					title: Text(title),
-					content: TextField(
-						autofocus: true,
-						decoration: InputDecoration(hintText: "入力してください"),
-						onChanged: (value) {
-							inputValue = value;
-						},
-						controller: TextEditingController()..text = inputValue,
-					),
-					actions: [
-						TextButton(
-							onPressed: () => Navigator.of(context).pop(inputValue),
-							child: Text("OK"),
-						),
-					],
-				);
-			},
-		);
-	}
+  CircleData({
+    required this.left,
+    required this.top,
+    required this.text,
+  });
 }

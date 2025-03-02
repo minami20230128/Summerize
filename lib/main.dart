@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:postgres/postgres.dart';
-import 'database_helper.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'CharacterGraphScreen.dart';
 
 class ApiService {
     static const String baseUrl = "http://localhost:8080/api";
@@ -80,13 +79,13 @@ class ApiService {
     }
 }
 
-    class Bookshelf {
+class Bookshelf {
     List<Book> books = [];
 
     void addBook(Book book) {
-    books.add(book);
+        books.add(book);
     }
-    }
+}
 
 class Book {
     int? id;
@@ -142,14 +141,14 @@ class Chapter {
 
 void main() async {
     runApp(MyApp());
-    }
+}
 
-    class MyApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
     @override
     Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: BookSummaryApp(),
+        return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: BookSummaryApp(),
         );
     }
 }
@@ -182,77 +181,77 @@ class _BookSummaryAppState extends State<BookSummaryApp> {
         newBook.id = await ApiService.addBook(newBook);
         print(newBook.id);
         setState(() {
-        _bookshelf.addBook(newBook);
+            _bookshelf.addBook(newBook);
         });
 	}
 
 	void _showAddBookDialog() {
-	final TextEditingController _titleController = TextEditingController();
+        final TextEditingController _titleController = TextEditingController();
 
-	showDialog(
-		context: context,
-		builder: (BuildContext context) {
-		return AlertDialog(
-			title: Text("書籍のタイトルを入力"),
-			content: TextField(
-			controller: _titleController,
-			decoration: InputDecoration(hintText: "例: Flutter入門"),
-			),
-			actions: [
-			TextButton(
-				onPressed: () {
-				Navigator.of(context).pop();
-				},
-				child: Text("キャンセル"),
-			),
-			TextButton(
-				onPressed: () {
-				final title = _titleController.text.trim();
-				if (title.isNotEmpty) {
-					_addBook(title);
-				}
-				Navigator.of(context).pop();
-				},
-				child: Text("追加"),
-			),
-			],
-		);
-		},
-	);
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+                return AlertDialog(
+                    title: Text("書籍のタイトルを入力"),
+                    content: TextField(
+                        controller: _titleController,
+                        decoration: InputDecoration(hintText: "例: Flutter入門"),
+                    ),
+                    actions: [
+                    TextButton(
+                        onPressed: () {
+                            Navigator.of(context).pop();
+                        },
+                        child: Text("キャンセル"),
+                    ),
+                    TextButton(
+                        onPressed: () {
+                            final title = _titleController.text.trim();
+                            if (title.isNotEmpty) {
+                                _addBook(title);
+                            }
+                            Navigator.of(context).pop();
+                        },
+                        child: Text("追加"),
+                    ),
+                    ],
+                );
+            },
+        );
 	}
 
 	@override
 	Widget build(BuildContext context) {
-	return Scaffold(
-		appBar: AppBar(
-		title: Text("書籍要約アプリ"),
-		),
-		body: ListView.builder(
-		itemCount: _bookshelf.books.length,
-		itemBuilder: (context, index) {
-			final book = _bookshelf.books[index];
-			return Card(
-			margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-			child: ListTile(
-				title: Text(book.title),
-				onTap: () {
-        print("Navigating to BookDetailScreen with book ID: ${book.id}");
-				Navigator.push(
-					context,
-					MaterialPageRoute(
-					builder: (context) => BookDetailScreen(book: book),
-					),
-				);
-				},
-			),
-			);
-		},
-		),
-		floatingActionButton: FloatingActionButton(
-		onPressed: _showAddBookDialog,
-		child: Icon(Icons.add),
-		),
-	);
+        return Scaffold(
+            appBar: AppBar(
+            title: Text("書籍要約アプリ"),
+            ),
+            body: ListView.builder(
+                itemCount: _bookshelf.books.length,
+                itemBuilder: (context, index) {
+                    final book = _bookshelf.books[index];
+                    return Card(
+                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        child: ListTile(
+                            title: Text(book.title),
+                            onTap: () {
+                                print("Navigating to BookDetailScreen with book ID: ${book.id}");
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => BookDetailScreen(book: book),
+                                    ),
+                                );
+                            },
+                        ),
+                    );
+                },
+            ),
+            floatingActionButton: FloatingActionButton(
+                onPressed: _showAddBookDialog,
+                child: Icon(Icons.add),
+            ),
+        );
 	}
 }
 
@@ -266,192 +265,205 @@ class BookDetailScreen extends StatefulWidget {
 }
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
-  final TextEditingController _chapterTitleController = TextEditingController();
-  final TextEditingController _chapterContentController = TextEditingController();
+    final TextEditingController _chapterTitleController = TextEditingController();
+    final TextEditingController _chapterContentController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchChapters(); // 画面表示時に最新の章を取得
-  }
+    @override
+    void initState() {
+        super.initState();
+        _fetchChapters(); // 画面表示時に最新の章を取得
+    }
 
-  void _fetchChapters() async {
-    // 最新の書籍データを取得
-    List<Book> books = await ApiService.fetchBooksWithChapters();
-    print("book.chapter.title ${books[0].chapters[0].chapterTitle}");
-    print("widget.book.id ${widget.book.id}");
-    Book? updatedBook = books.firstWhere((b) => b.id == widget.book.id, orElse: () => widget.book);
+    void _fetchChapters() async {
+        // 最新の書籍データを取得
+        List<Book> books = await ApiService.fetchBooksWithChapters();
+        Book? updatedBook = books.firstWhere((b) => b.id == widget.book.id, orElse: () => widget.book);
 
-    setState(() {
-      widget.book = updatedBook;
-    });
-  }
+        setState(() {
+            widget.book = updatedBook;
+        });
+    }
 
-  void _addChapter(String title, String content) async {
-    print("Adding chapter to book ID: ${widget.book.id}");
-    final newChapter = Chapter(chapterTitle: title, content: content, bookId: widget.book.id!);
+    void _addChapter(String title, String content) async {
+        print("Adding chapter to book ID: ${widget.book.id}");
+        final newChapter = Chapter(chapterTitle: title, content: content, bookId: widget.book.id!);
 
-    // APIを呼んでデータベースに登録
-    newChapter.id = await ApiService.addChapter(newChapter);
-    setState(() {
-      widget.book.addChapter(newChapter);
-    });
-    _chapterTitleController.clear();
-    _chapterContentController.clear();
-  }
+        // APIを呼んでデータベースに登録
+        newChapter.id = await ApiService.addChapter(newChapter);
+        setState(() {
+            widget.book.addChapter(newChapter);
+        });
+        _chapterTitleController.clear();
+        _chapterContentController.clear();
+    }
 
-  void _showAddChapterDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("章の追加"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _chapterTitleController,
-                decoration: InputDecoration(hintText: "章のタイトル"),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: _chapterContentController,
-                decoration: InputDecoration(hintText: "章の内容"),
-                maxLines: 5,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("キャンセル"),
-            ),
-            TextButton(
-              onPressed: () {
-                final title = _chapterTitleController.text.trim();
-                final content = _chapterContentController.text.trim();
-                if (title.isNotEmpty && content.isNotEmpty) {
-                  _addChapter(title, content);
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text("追加"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 章情報を編集するためのダイアログを表示
-  void _showEditChapterDialog(Chapter chapter) {
-    _chapterTitleController.text = chapter.chapterTitle;
-    _chapterContentController.text = chapter.content;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("章の編集"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _chapterTitleController,
-                decoration: InputDecoration(hintText: "章のタイトル"),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                controller: _chapterContentController,
-                decoration: InputDecoration(hintText: "章の内容"),
-                maxLines: 5,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text("キャンセル"),
-            ),
-            TextButton(
-              onPressed: () {
-                final title = _chapterTitleController.text.trim();
-                final content = _chapterContentController.text.trim();
-                if (title.isNotEmpty && content.isNotEmpty) {
-                  _updateChapter(chapter, title, content);
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text("保存"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // 章情報を更新する
-  void _updateChapter(Chapter chapter, String title, String content) async {
-    print("Updating chapter ID: ${chapter.id}");
-    chapter.chapterTitle = title;
-    chapter.content = content;
-
-    // APIを呼んで更新
-    await ApiService.updateChapter(chapter);
-
-    // 更新後に画面を再描画
-    setState(() {
-      // 更新した章をリストの中で置き換え
-      int index = widget.book.chapters.indexWhere((ch) => ch.id == chapter.id);
-      if (index != -1) {
-        widget.book.chapters[index] = chapter;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    print(widget.book.chapters[0].chapterTitle);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("書籍の詳細: ${widget.book.title}"),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: widget.book.chapters.length,
-              itemBuilder: (context, index) {
-                final chapter = widget.book.chapters[index];
-                return GestureDetector(
-                  onTap: () {
-                    _showEditChapterDialog(chapter); // 章をタップしたときに編集ダイアログを表示
-                  },
-                  child: Card(
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: ListTile(
-                      title: Text(chapter.chapterTitle),
-                      subtitle: Text(chapter.content),
+    void _showAddChapterDialog() {
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+                return AlertDialog(
+                    title: Text("章の追加"),
+                    content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                            TextField(
+                                controller: _chapterTitleController,
+                                decoration: InputDecoration(hintText: "章のタイトル"),
+                            ),
+                            SizedBox(height: 8),
+                            TextField(
+                                controller: _chapterContentController,
+                                decoration: InputDecoration(hintText: "章の内容"),
+                                maxLines: 5,
+                            ),
+                        ],
                     ),
-                  ),
+                    actions: [
+                        TextButton(
+                            onPressed: () {
+                                Navigator.of(context).pop();
+                            },
+                            child: Text("キャンセル"),
+                        ),
+                        TextButton(
+                            onPressed: () {
+                                final title = _chapterTitleController.text.trim();
+                                final content = _chapterContentController.text.trim();
+                                if (title.isNotEmpty && content.isNotEmpty) {
+                                    _addChapter(title, content);
+                                }
+                                Navigator.of(context).pop();
+                            },
+                            child: Text("追加"),
+                        ),
+                    ],
                 );
-              },
+            },
+        );
+    }
+
+    // 章情報を編集するためのダイアログを表示
+    void _showEditChapterDialog(Chapter chapter) {
+        _chapterTitleController.text = chapter.chapterTitle;
+        _chapterContentController.text = chapter.content;
+
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+                return AlertDialog(
+                    title: Text("章の編集"),
+                    content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                            TextField(
+                                controller: _chapterTitleController,
+                                decoration: InputDecoration(hintText: "章のタイトル"),
+                            ),
+                            SizedBox(height: 8),
+                            TextField(
+                                controller: _chapterContentController,
+                                decoration: InputDecoration(hintText: "章の内容"),
+                                maxLines: 5,
+                            ),
+                        ],
+                    ),
+                    actions: [
+                        TextButton(
+                            onPressed: () {
+                                Navigator.of(context).pop();
+                            },
+                            child: Text("キャンセル"),
+                        ),
+                        TextButton(
+                            onPressed: () {
+                                final title = _chapterTitleController.text.trim();
+                                final content = _chapterContentController.text.trim();
+                                if (title.isNotEmpty && content.isNotEmpty) {
+                                    _updateChapter(chapter, title, content);
+                                }
+                                Navigator.of(context).pop();
+                            },
+                            child: Text("保存"),
+                        ),
+                    ],
+                );
+            },
+        );
+    }
+
+    // 章情報を更新する
+    void _updateChapter(Chapter chapter, String title, String content) async {
+        print("Updating chapter ID: ${chapter.id}");
+        chapter.chapterTitle = title;
+        chapter.content = content;
+
+        // APIを呼んで更新
+        await ApiService.updateChapter(chapter);
+
+        // 更新後に画面を再描画
+        setState(() {
+            // 更新した章をリストの中で置き換え
+            int index = widget.book.chapters.indexWhere((ch) => ch.id == chapter.id);
+            if (index != -1) {
+                widget.book.chapters[index] = chapter;
+            }
+        });
+    }
+
+    // 人物相関図画面に遷移
+    void _navigateToCharacterGraph() {
+        Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CharacterGraphScreen()),
+        );
+    }
+
+    @override
+    Widget build(BuildContext context) {
+        return Scaffold(
+            appBar: AppBar(
+                title: Text("書籍の詳細: ${widget.book.title}"),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: _showAddChapterDialog,
-              child: Text("章を追加"),
+            body: Column(
+                children: [
+                    Expanded(
+                        child: ListView.builder(
+                            itemCount: widget.book.chapters.length,
+                            itemBuilder: (context, index) {
+                                final chapter = widget.book.chapters[index];
+                                return GestureDetector(
+                                    onTap: () {
+                                        _showEditChapterDialog(chapter); // 章をタップしたときに編集ダイアログを表示
+                                    },
+                                    child: Card(
+                                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                        child: ListTile(
+                                            title: Text(chapter.chapterTitle),
+                                            subtitle: Text(chapter.content),
+                                        ),
+                                    ),
+                                );
+                            },
+                        ),
+                    ),
+                    Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                            children: [
+                                ElevatedButton(
+                                    onPressed: _showAddChapterDialog,
+                                    child: Text("章を追加"),
+                                ),
+                                SizedBox(width: 16),
+                                ElevatedButton(
+                                    onPressed: _navigateToCharacterGraph,
+                                    child: Text("人物相関図"),
+                                ),
+                            ],
+                        ),
+                    ),
+                ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
+        );
+    }
 }
