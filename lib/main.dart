@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'CharacterGraphScreen.dart';
+import 'RelatedBooksScreen.dart';
 
 class ApiService {
     static const String baseUrl = "http://localhost:8080/api";
@@ -418,52 +419,65 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         );
     }
 
-    @override
-    Widget build(BuildContext context) {
-        return Scaffold(
-            appBar: AppBar(
-                title: Text("書籍の詳細: ${widget.book.title}"),
-            ),
-            body: Column(
-                children: [
-                    Expanded(
-                        child: ListView.builder(
-                            itemCount: widget.book.chapters.length,
-                            itemBuilder: (context, index) {
-                                final chapter = widget.book.chapters[index];
-                                return GestureDetector(
-                                    onTap: () {
-                                        _showEditChapterDialog(chapter); // 章をタップしたときに編集ダイアログを表示
-                                    },
-                                    child: Card(
-                                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                        child: ListTile(
-                                            title: Text(chapter.chapterTitle),
-                                            subtitle: Text(chapter.content),
-                                        ),
-                                    ),
-                                );
-                            },
-                        ),
-                    ),
-                    Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                            children: [
-                                ElevatedButton(
-                                    onPressed: _showAddChapterDialog,
-                                    child: Text("章を追加"),
-                                ),
-                                SizedBox(width: 16),
-                                ElevatedButton(
-                                    onPressed: _navigateToCharacterGraph,
-                                    child: Text("人物相関図"),
-                                ),
-                            ],
-                        ),
-                    ),
-                ],
-            ),
+      // 「関連書籍」画面に遷移する関数
+    void _navigateToRelatedBooks() {
+        Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => RelatedBooksScreen()), // 画面遷移先を適宜指定
         );
     }
+
+  @override
+  Widget build(BuildContext context) {
+      return Scaffold(
+          appBar: AppBar(
+              title: Text("書籍の詳細: ${widget.book.title}"),
+          ),
+          body: Column(
+              children: [
+                  Expanded(
+                      child: ListView.builder(
+                          itemCount: widget.book.chapters.length,
+                          itemBuilder: (context, index) {
+                              final chapter = widget.book.chapters[index];
+                              return GestureDetector(
+                                  onTap: () {
+                                      _showEditChapterDialog(chapter); // 章をタップしたときに編集ダイアログを表示
+                                  },
+                                  child: Card(
+                                      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                      child: ListTile(
+                                          title: Text(chapter.chapterTitle),
+                                          subtitle: Text(chapter.content),
+                                      ),
+                                  ),
+                              );
+                          },
+                      ),
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                          children: [
+                              ElevatedButton(
+                                  onPressed: _showAddChapterDialog,
+                                  child: Text("章を追加"),
+                              ),
+                              SizedBox(width: 16),
+                              ElevatedButton(
+                                  onPressed: _navigateToCharacterGraph,
+                                  child: Text("人物相関図"),
+                              ),
+                              SizedBox(width: 16),
+                              ElevatedButton(
+                                  onPressed: _navigateToRelatedBooks, // 新しいボタンのアクション
+                                  child: Text("関連書籍"),
+                              ),
+                          ],
+                      ),
+                  ),
+              ],
+          ),
+      );
+  }
 }
