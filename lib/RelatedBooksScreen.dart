@@ -2,14 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
+// RelatedBookクラスを追加
+class RelatedBook {
+  int? id;
+  String title;
+  String url;
+
+  // 通常のコンストラクタ
+  RelatedBook({required this.title, required this.url});
+
+  // id付きのコンストラクタ（データベースなどから読み込んだ場合）
+  RelatedBook.load({
+    required this.id,
+    required this.title,
+    required this.url,
+  });
+}
+
 class RelatedBooksScreen extends StatefulWidget {
   @override
   _RelatedBooksScreenState createState() => _RelatedBooksScreenState();
 }
 
 class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
-  // A list to hold related book data
-  List<Map<String, String>> relatedBooks = [];
+  // RelatedBookオブジェクトのリスト
+  List<RelatedBook> relatedBooks = [];
 
   final TextEditingController _bookNameController = TextEditingController();
   final TextEditingController _urlController = TextEditingController();
@@ -63,7 +80,8 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
   // Add the related book to the list
   void _addRelatedBook(String bookName, String url) {
     setState(() {
-      relatedBooks.add({"bookName": bookName, "url": url});
+      // RelatedBookインスタンスをリストに追加
+      relatedBooks.add(RelatedBook(title: bookName, url: url));
     });
 
     // Clear the text fields
@@ -93,11 +111,11 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
           return Card(
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: ListTile(
-              title: Text(book["bookName"]!),
+              title: Text(book.title), // bookName -> title
               subtitle: GestureDetector(
-                onTap: () => _launchURL(book["url"]!), // Make the URL clickable
+                onTap: () => _launchURL(book.url), // Make the URL clickable
                 child: Text(
-                  book["url"]!,
+                  book.url, // URLの表示部分
                   style: TextStyle(
                     color: Colors.blue,
                     decoration: TextDecoration.underline,
