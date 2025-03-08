@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class RelatedBooksScreen extends StatefulWidget {
   @override
@@ -69,6 +71,15 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
     _urlController.clear();
   }
 
+  // Function to launch the URL
+  Future<void> _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launchUrlString(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,7 +94,16 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: ListTile(
               title: Text(book["bookName"]!),
-              subtitle: Text(book["url"]!),
+              subtitle: GestureDetector(
+                onTap: () => _launchURL(book["url"]!), // Make the URL clickable
+                child: Text(
+                  book["url"]!,
+                  style: TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
             ),
           );
         },
