@@ -1,37 +1,59 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';  // JSON処理のため
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-// RelatedBookクラスを追加
 class RelatedBook {
   int? id;
   String title;
   String url;
+  int bookId;
 
-  // 通常のコンストラクタ
-  RelatedBook({required this.title, required this.url});
+  RelatedBook({required this.title, required this.url, required this.bookId});
 
-  // id付きのコンストラクタ（データベースなどから読み込んだ場合）
   RelatedBook.load({
     required this.id,
     required this.title,
     required this.url,
+    required this.bookId
   });
+
+  // JSONからインスタンスを生成するためのファクトリメソッド
+  factory RelatedBook.fromJson(Map<String, dynamic> json) {
+    return RelatedBook.load(
+      id: json['id'],
+      title: json['title'],
+      url: json['url'],
+      bookId: json['bookId'],
+    );
+  }
+
+  // インスタンスをJSONに変換するメソッド
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'url': url,
+      'bookId':bookId
+    };
+  }
 }
 
 class RelatedBooksScreen extends StatefulWidget {
+  final int bookId;
+  RelatedBooksScreen({required this.bookId});
+
   @override
   _RelatedBooksScreenState createState() => _RelatedBooksScreenState();
 }
 
 class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
-  // RelatedBookオブジェクトのリスト
   List<RelatedBook> relatedBooks = [];
 
   final TextEditingController _bookNameController = TextEditingController();
   final TextEditingController _urlController = TextEditingController();
 
-  // Show dialog to add a related book
+  // 関連書籍を追加するダイアログ
   void _showAddRelatedBookDialog() {
     showDialog(
       context: context,
@@ -60,12 +82,13 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
               child: Text("キャンセル"),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 final bookName = _bookNameController.text.trim();
                 final url = _urlController.text.trim();
 
                 if (bookName.isNotEmpty && url.isNotEmpty) {
-                  _addRelatedBook(bookName, url);
+                  // APIを呼び出してデータベースに保存
+                  await _addRelatedBook(bookName, url);
                 }
                 Navigator.of(context).pop();
               },
@@ -77,19 +100,45 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
     );
   }
 
-  // Add the related book to the list
-  void _addRelatedBook(String bookName, String url) {
-    setState(() {
-      // RelatedBookインスタンスをリストに追加
-      relatedBooks.add(RelatedBook(title: bookName, url: url));
-    });
+  // 関連書籍をAPIに追加するメソッド
+  Future<void> _addRelatedBook(String bookName, String url) async {
+    final relatedBook = RelatedBook(title: bookName, url: url, bookId: widget.bookId);
+    
+    // APIのURL（バックエンドで設定したURLに合わせてください）
+    final apiUrl = 'https://example.com/api/relatedBooks'; 
 
-    // Clear the text fields
+    // API呼び出し（POSTリクエスト）
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'bookId': widget.bookId, // bookIdを一緒に送る
+        'title': relatedBook.title,
+        'url': relatedBook.url,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      // 成功した場合
+      final responseJson = jsonDecode(response.body);
+      final addedRelatedBook = RelatedBook.fromJson(responseJson);
+
+      setState(() {
+        relatedBooks.add(addedRelatedBook);
+      });
+    } else {
+      // エラーハンドリング
+      print('Failed to add related book');
+    }
+
+    // 入力欄をクリア
     _bookNameController.clear();
     _urlController.clear();
   }
 
-  // Function to launch the URL
+  // URLを開く関数
   Future<void> _launchURL(String url) async {
     if (await canLaunch(url)) {
       await launchUrlString(url);
@@ -111,11 +160,11 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
           return Card(
             margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: ListTile(
-              title: Text(book.title), // bookName -> title
+              title: Text(book.title),
               subtitle: GestureDetector(
-                onTap: () => _launchURL(book.url), // Make the URL clickable
+                onTap: () => _launchURL(book.url),
                 child: Text(
-                  book.url, // URLの表示部分
+                  book.url,
                   style: TextStyle(
                     color: Colors.blue,
                     decoration: TextDecoration.underline,
