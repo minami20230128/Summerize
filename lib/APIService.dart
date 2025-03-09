@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:summarize_app/Book.dart';
+import 'package:summarize_app/RelatedBooksScreen.dart';
 
 class ApiService {
     static const String baseUrl = "http://localhost:8080/api";
@@ -77,4 +78,39 @@ class ApiService {
             return false;
         }
     }
+
+  // 関連書籍をAPIに追加するメソッド
+  static Future<int?> addRelatedBook(RelatedBook relatedBook) async {
+
+    // API呼び出し（POSTリクエスト）
+    final response = await http.post(
+      Uri.parse("$baseUrl/related-books"),
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'bookId': relatedBook.bookId, // bookIdを一緒に送る
+        'title': relatedBook.title,
+        'url': relatedBook.url,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      final data = jsonDecode(response.body);
+          return data["id"]; // 保存された chapterId を返す
+    }
+    return null;
+  }
+
+  static Future<List<RelatedBook>> fetchRelatedBooks(int bookId) async {
+    final response = await http.get(Uri.parse("$baseUrl/related-books/by-book-id/${bookId}"));
+
+        if (response.statusCode == 200) {
+            List<dynamic> data = jsonDecode(response.body);
+            print('Response body: ${response.body}');
+            return data.map((json) => RelatedBook.fromJson(json)).toList();
+        } else {
+            throw Exception("Failed to load books");
+        }
+  }
 }

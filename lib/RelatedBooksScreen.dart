@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:summarize_app/APIService.dart';
 import 'dart:convert';  // JSON処理のため
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -53,6 +54,20 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
   final TextEditingController _bookNameController = TextEditingController();
   final TextEditingController _urlController = TextEditingController();
 
+  @override
+  void initState() {
+      super.initState();
+      _fetchRelatedBooks(); // 画面表示時に最新の章を取得
+  }
+
+  void _fetchRelatedBooks() async {
+    List<RelatedBook> books = await ApiService.fetchRelatedBooks(widget.bookId);
+    setState(() {
+      relatedBooks = books;
+      print("relatedBooks size: ${relatedBooks.length}");
+    });
+  }
+
   // 関連書籍を追加するダイアログ
   void _showAddRelatedBookDialog() {
     showDialog(
@@ -88,7 +103,16 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
 
                 if (bookName.isNotEmpty && url.isNotEmpty) {
                   // APIを呼び出してデータベースに保存
-                  await _addRelatedBook(bookName, url);
+                  final relatedBook = RelatedBook(title: bookName, url: url, bookId: widget.bookId);
+                  relatedBook.id = await ApiService.addRelatedBook(relatedBook);
+
+                  setState(() {
+                    this.relatedBooks.add(relatedBook);
+                  });
+
+                  // 入力欄をクリア
+                  _bookNameController.clear();
+                  _urlController.clear();
                 }
                 Navigator.of(context).pop();
               },
@@ -98,44 +122,6 @@ class _RelatedBooksScreenState extends State<RelatedBooksScreen> {
         );
       },
     );
-  }
-
-  // 関連書籍をAPIに追加するメソッド
-  Future<void> _addRelatedBook(String bookName, String url) async {
-    final relatedBook = RelatedBook(title: bookName, url: url, bookId: widget.bookId);
-    
-    // APIのURL（バックエンドで設定したURLに合わせてください）
-    final apiUrl = 'https://example.com/api/relatedBooks'; 
-
-    // API呼び出し（POSTリクエスト）
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: <String, String>{
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'bookId': widget.bookId, // bookIdを一緒に送る
-        'title': relatedBook.title,
-        'url': relatedBook.url,
-      }),
-    );
-
-    if (response.statusCode == 201) {
-      // 成功した場合
-      final responseJson = jsonDecode(response.body);
-      final addedRelatedBook = RelatedBook.fromJson(responseJson);
-
-      setState(() {
-        relatedBooks.add(addedRelatedBook);
-      });
-    } else {
-      // エラーハンドリング
-      print('Failed to add related book');
-    }
-
-    // 入力欄をクリア
-    _bookNameController.clear();
-    _urlController.clear();
   }
 
   // URLを開く関数
