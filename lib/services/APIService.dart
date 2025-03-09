@@ -5,79 +5,112 @@ import 'package:summarize_app/model/Book.dart';
 import 'package:summarize_app/model/RelatedBook.dart';
 
 class ApiService {
-    static const String baseUrl = "http://localhost:8080/api";
+  static const String baseUrl = "http://localhost:8080/api";
 
-    // 書籍を追加
-    static Future<int?> addBook(Book book) async {
-        final response = await http.post(
-            Uri.parse("$baseUrl/books"),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode({"title": book.title}),
-        );
+  // 書籍を追加
+  static Future<int?> addBook(Book book) async {
+      final response = await http.post(
+          Uri.parse("$baseUrl/books"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"title": book.title}),
+      );
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-            print("Book added successfully");
-            final data = jsonDecode(response.body);
-            print(data["id"]);
-            return data["id"];  // 返された書籍のIDを取得
-            } 
-        return null;
-    }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+          print("Book added successfully");
+          final data = jsonDecode(response.body);
+          print(data["id"]);
+          return data["id"];  // 返された書籍のIDを取得
+          } 
+      return null;
+  }
 
-    // 章を追加
-    static Future<int?> addChapter(Chapter chapter) async {
-        print(chapter.content);
-        final response = await http.post(
-            Uri.parse("$baseUrl/chapters"),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode({
-                "chapterTitle": chapter.chapterTitle,
-                "content": chapter.content,
-                "bookId": chapter.bookId
-            }),
-        );
+  // 書籍を削除
+  static Future<bool> deleteBook(int bookId) async {
+      final response = await http.delete(
+          Uri.parse("$baseUrl/books/$bookId"),
+          headers: {"Content-Type": "application/json"},
+      );
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-            final data = jsonDecode(response.body);
-            return data["id"]; // 保存された chapterId を返す
-        }
-        return null;
-    }
+      if (response.statusCode == 200 || response.statusCode == 204) {
+          print("Book deleted successfully");
+          return true;
+      } else {
+          print("Failed to delete book. Status code: ${response.statusCode}");
+          return false;
+      }
+  }
 
-    static Future<List<Book>> fetchBooksWithChapters() async {
-        final response = await http.get(Uri.parse("$baseUrl/books/details"));
+  // 書籍のタイトルを更新
+  static Future<bool> updateBookTitle(int bookId, String newTitle) async {
+      final response = await http.put(
+          Uri.parse("$baseUrl/books/$bookId"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({"title": newTitle}),
+      );
 
-        if (response.statusCode == 200) {
-            List<dynamic> data = jsonDecode(response.body);
-            print('Response body: ${response.body}');
-            return data.map((json) => Book.fromJson(json)).toList();
-        } else {
-            throw Exception("Failed to load books");
-        }
-    }
+      if (response.statusCode == 200 || response.statusCode == 204) {
+          print("Book title updated successfully");
+          return true;
+      } else {
+          print("Failed to update book title. Status code: ${response.statusCode}");
+          return false;
+      }
+  }
 
-    // 章を更新
-    static Future<bool> updateChapter(Chapter chapter) async {
-        final response = await http.put(
-            Uri.parse("$baseUrl/chapters/${chapter.id}"),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode({
-                "chapterTitle": chapter.chapterTitle,
-                "content": chapter.content,
-                "book": {
-                    "id": chapter.bookId // 必要ならbookのidも送信
-                }
-            }),
-        );
+  // 章を追加
+  static Future<int?> addChapter(Chapter chapter) async {
+      print(chapter.content);
+      final response = await http.post(
+          Uri.parse("$baseUrl/chapters"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+              "chapterTitle": chapter.chapterTitle,
+              "content": chapter.content,
+              "bookId": chapter.bookId
+          }),
+      );
 
-        if (response.statusCode == 200 || response.statusCode == 204) {
-            print("Chapter updated successfully");
-            return true;
-        } else {
-            print("Failed to update chapter. Status code: ${response.statusCode}");
-            return false;
-        }
-    }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+          final data = jsonDecode(response.body);
+          return data["id"]; // 保存された chapterId を返す
+      }
+      return null;
+  }
+
+  static Future<List<Book>> fetchBooksWithChapters() async {
+      final response = await http.get(Uri.parse("$baseUrl/books/details"));
+
+      if (response.statusCode == 200) {
+          List<dynamic> data = jsonDecode(response.body);
+          print('Response body: ${response.body}');
+          return data.map((json) => Book.fromJson(json)).toList();
+      } else {
+          throw Exception("Failed to load books");
+      }
+  }
+
+  // 章を更新
+  static Future<bool> updateChapter(Chapter chapter) async {
+      final response = await http.put(
+          Uri.parse("$baseUrl/chapters/${chapter.id}"),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+              "chapterTitle": chapter.chapterTitle,
+              "content": chapter.content,
+              "book": {
+                  "id": chapter.bookId // 必要ならbookのidも送信
+              }
+          }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+          print("Chapter updated successfully");
+          return true;
+      } else {
+          print("Failed to update chapter. Status code: ${response.statusCode}");
+          return false;
+      }
+  }
 
   // 関連書籍をAPIに追加するメソッド
   static Future<int?> addRelatedBook(RelatedBook relatedBook) async {

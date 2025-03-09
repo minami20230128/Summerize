@@ -4,6 +4,10 @@ class Bookshelf {
     void addBook(Book book) {
         books.add(book);
     }
+
+    void deleteBook(Book book) {
+      books.remove(book);
+    }
 }
 
 class Book {
