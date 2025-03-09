@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:summarize_app/Book.dart';
-import 'package:summarize_app/RelatedBooksScreen.dart';
+import 'package:summarize_app/model/Book.dart';
+import 'package:summarize_app/model/RelatedBook.dart';
 
 class ApiService {
     static const String baseUrl = "http://localhost:8080/api";

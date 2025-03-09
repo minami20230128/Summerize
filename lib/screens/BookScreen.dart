@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:summarize_app/APIService.dart';
-import 'package:summarize_app/Book.dart';
-import 'package:summarize_app/BookDetailScreen.dart';
+import 'package:summarize_app/services/APIService.dart';
+import 'package:summarize_app/model/Book.dart';
+import 'package:summarize_app/screens/BookDetailScreen.dart';
 
 class BookScreen extends StatefulWidget {
 	@override

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:summarize_app/APIService.dart';
-import 'package:summarize_app/Book.dart';
-import 'package:summarize_app/CharacterGraphScreen.dart';
-import 'package:summarize_app/RelatedBooksScreen.dart';
+import 'package:summarize_app/services/APIService.dart';
+import 'package:summarize_app/model/Book.dart';
+import 'package:summarize_app/screens/CharacterGraphScreen.dart';
+import 'package:summarize_app/screens/RelatedBooksScreen.dart';
 
 class BookDetailScreen extends StatefulWidget {
 	Book book;

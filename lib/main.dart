@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:summarize_app/BookScreen.dart';
+import 'package:summarize_app/screens/BookScreen.dart';
 
 void main() async {
     runApp(MyApp());
