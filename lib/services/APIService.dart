@@ -66,6 +66,7 @@ class ApiService {
           body: jsonEncode({
               "chapterTitle": chapter.chapterTitle,
               "content": chapter.content,
+              "insight": chapter.insight,
               "bookId": chapter.bookId
           }),
       );
@@ -97,6 +98,7 @@ class ApiService {
           body: jsonEncode({
               "chapterTitle": chapter.chapterTitle,
               "content": chapter.content,
+              "insight": chapter.insight,
               "book": {
                   "id": chapter.bookId // 必要ならbookのidも送信
               }
