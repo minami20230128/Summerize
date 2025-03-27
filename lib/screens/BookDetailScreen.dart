@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:file_saver/file_saver.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 import 'package:summarize_app/services/APIService.dart';
 import 'package:summarize_app/model/Book.dart';
 import 'package:summarize_app/screens/CharacterGraphScreen.dart';
@@ -193,6 +196,54 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
+  void _exportChaptersAsMarkdown() async {
+    // Markdown文字列を生成
+    String markdownContent = _generateMarkdown();
+    Uint8List bytes = Uint8List.fromList(utf8.encode(markdownContent));
+
+    try {
+      // ファイル保存ダイアログを開く（拡張子を .md に指定）
+      await FileSaver.instance.saveFile(
+        name: "${widget.book.title}",
+        bytes: bytes,
+        ext: "md",
+        mimeType: MimeType.text,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Markdownファイルをエクスポートしました！")),
+      );
+    } catch (e) {
+      print("エクスポート失敗: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("エクスポートに失敗しました")),
+      );
+    }
+  }
+
+  // Markdown文字列を生成する関数
+  String _generateMarkdown() {
+    StringBuffer buffer = StringBuffer();
+    buffer.writeln('# ${widget.book.title}\n');
+
+    for (var chapter in widget.book.chapters) {
+      buffer.writeln('## ${chapter.chapterTitle}\n');
+      buffer.writeln('### 要約\n');
+      buffer.writeln('${_convertToMarkdown(chapter.content)}\n');
+
+      if (chapter.insight != null && chapter.insight!.isNotEmpty) {
+        buffer.writeln('### 気づき・感想\n');
+        buffer.writeln('${_convertToMarkdown(chapter.insight!)}\n');
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  String _convertToMarkdown(String text) {
+    return text.replaceAll("\n", "  \n");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -275,6 +326,11 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                 ElevatedButton(
                   onPressed: () => _navigateToRelatedBooks(widget.book.id!), // 新しいボタンのアクション
                   child: Text("関連書籍"),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _exportChaptersAsMarkdown,
+                  child: Text("エクスポート"),
                 ),
               ],
             ),
